@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ecslite\Leopotam.EcsLite.csproj" />
+    <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\ECS\ECS.csproj" />
-    <ProjectReference Include="..\Entities\Core.csproj" />
+    <ProjectReference Include="..\Leopotam.EcsLite\Leopotam.EcsLite.csproj" />
   </ItemGroup>
 
 </Project>
