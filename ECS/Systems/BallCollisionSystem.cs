@@ -122,7 +122,61 @@ namespace ECS.Systems
                 }
             }
 
+            if (AreSegmentsIntersecting(oldPos, newPos, wallStart, wallEnd, out var intersection))
+            {
+                collisionPoint = intersection - Vector2.Normalize(velocity) * radius * 1.1f;
+
+                return true;
+            }
+
             return false;
+        }
+
+        // Функция, проверяющая пересечение двух отрезков
+        static bool AreSegmentsIntersecting(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, out Vector2 intersection)
+        {
+            intersection = new Vector2();
+
+            // Рассчитываем направления отрезков
+            Vector2 d1 = p2 - p1;
+            Vector2 d2 = p4 - p3;
+
+            // Вычисляем знаменатель
+            float denominator = d1.X * d2.Y - d1.Y * d2.X;
+
+            // Если знаменатель равен 0, отрезки параллельны или совпадают
+            if (Math.Abs(denominator) < 1e-6)
+            {
+                return false;
+            }
+
+            // Вычисляем параметры для проверки пересечения
+            float t = ((p3.X - p1.X) * d2.Y - (p3.Y - p1.Y) * d2.X) / denominator;
+            float u = ((p3.X - p1.X) * d1.Y - (p3.Y - p1.Y) * d1.X) / denominator;
+
+            // Проверяем, находятся ли пересечения в пределах отрезков
+            if (t >= 0 && t <= 1 && u >= 0 && u <= 1)
+            {
+                // Вычисляем точку пересечения
+                intersection = p1 + t * d1;
+                return true;
+            }
+
+            return false;
+        }
+
+        // Функция вычисления точки пересечения (предполагает, что пересечение существует)
+        static Vector2 GetIntersectionPoint(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4)
+        {
+            Vector2 d1 = p2 - p1;
+            Vector2 d2 = p4 - p3;
+
+            float denominator = d1.X * d2.Y - d1.Y * d2.X;
+
+            // Используем параметр t, чтобы найти точку пересечения
+            float t = ((p3.X - p1.X) * d2.Y - (p3.Y - p1.Y) * d2.X) / denominator;
+
+            return p1 + t * d1;
         }
 
 
