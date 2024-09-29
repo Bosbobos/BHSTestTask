@@ -65,7 +65,7 @@ namespace ECS.Systems
                         ballVelocity.Velocity = Reflect(ballVelocity.Velocity, wallNormal);
 
                         // Во избежание застревания шарика в стене, сдвигаем его немного в сторону от стены
-                        ballPosition.Position += Vector2.Normalize(ballVelocity.Velocity) * ballRadius.Radius * 1.005f;
+                        ballPosition.Position += ballVelocity.Velocity * ballRadius.Radius / 10;
                     }
                 }
             }
