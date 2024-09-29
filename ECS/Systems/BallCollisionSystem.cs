@@ -52,45 +52,87 @@ namespace ECS.Systems
                 {
                     ref var wall = ref _wallPool.Get(wallEntity);
 
-                    // ќпределение столкновени€ с вертикальной или горизонтальной стеной
-                    if (IsColliding(ballPosition.Position, ballRadius.Radius, wall.Start, wall.End))
+                    // ѕроверка столкновени€ с учетом "проскакивани€"
+                    if (WillCollide(ballPosition.Position, ballVelocity.Velocity, ballRadius.Radius, wall.Start, wall.End, out var collisionPoint, out var wallNormal))
                     {
                         // ¬ыводим идентификатор стены
                         Console.WriteLine($"Collision detected with wall Id: {wall.WallId}");
 
+                        //  орректируем позицию шарика до точки столкновени€
+                        ballPosition.Position = collisionPoint;
+
                         // ћен€ем направление скорости (отскок)
-                        ballVelocity.Velocity = Reflect(ballVelocity.Velocity, wall.Start, wall.End);
+                        ballVelocity.Velocity = Reflect(ballVelocity.Velocity, wallNormal);
+
+                        // ¬о избежание застревани€ шарика в стене, сдвигаем его немного в сторону от стены
+                        ballPosition.Position += ballVelocity.Velocity;
                     }
                 }
             }
         }
 
-        private bool IsColliding(Vector2 ballPos, float ballRadius, Vector2 wallStart, Vector2 wallEnd)
+        /// <summary>
+        /// ѕровер€ет, произойдет ли столкновение шарика со стеной на заданном отрезке.
+        /// </summary>
+        private bool WillCollide(Vector2 oldPos, Vector2 velocity, float radius, Vector2 wallStart, Vector2 wallEnd, out Vector2 collisionPoint, out Vector2 wallNormal)
         {
-            // ѕроверка столкновени€ (дл€ упрощени€, только с ос€ми)
-            if (wallStart.X == wallEnd.X) // ¬ертикальна€ стена
+            var newPos = oldPos + velocity;
+            collisionPoint = Vector2.Zero;
+            wallNormal = Vector2.Zero;
+
+            // –ассчитываем вектор направлени€ движени€ шарика
+            var ballMovementVector = newPos - oldPos;
+
+            // ¬ектор направлени€ стены
+            var wallVector = wallEnd - wallStart;
+
+            // ¬ектор нормали к стене
+            wallNormal = new Vector2(-wallVector.Y, wallVector.X);
+            wallNormal = Vector2.Normalize(wallNormal);
+
+            // ¬ектор от начала стены до центра шарика
+            var wallToBallStart = oldPos - wallStart;
+
+            // ѕроекци€ вектора от стены до шарика на нормаль стены
+            var projectionLength = Vector2.Dot(wallToBallStart, wallNormal);
+            var penetrationDistance = Math.Abs(projectionLength) - radius;
+
+            // ≈сли шарик уже пересекаетс€ со стеной
+            if (penetrationDistance <= 0)
             {
-                return Math.Abs(ballPos.X - wallStart.X) <= ballRadius;
+                // ”станавливаем точку столкновени€ с небольшим сдвигом в сторону от стены (во избежание застревани€ в стене)
+                collisionPoint = oldPos;
+                return true;
             }
-            else if (wallStart.Y == wallEnd.Y) // √оризонтальна€ стена
+
+            // ѕровер€ем, пересечет ли шарик стену на своем пути
+            var movementProjection = Vector2.Dot(ballMovementVector, wallNormal);
+
+            // ≈сли шарик движетс€ к стене (проверка знака проекции)
+            if (movementProjection < 0)
             {
-                return Math.Abs(ballPos.Y - wallStart.Y) <= ballRadius;
+                // ¬ычисл€ем врем€ столкновени€
+                var tCollision = penetrationDistance / -movementProjection;
+
+                if (tCollision >= 0 && tCollision <= 1)
+                {
+                    // Ќаходим точку столкновени€
+                    collisionPoint = oldPos + tCollision * ballMovementVector;
+                    return true;
+                }
             }
+
             return false;
         }
 
-        private Vector2 Reflect(Vector2 velocity, Vector2 wallStart, Vector2 wallEnd)
+
+        /// <summary>
+        /// ќтражает вектор скорости относительно заданной нормали.
+        /// </summary>
+        private Vector2 Reflect(Vector2 velocity, Vector2 normal)
         {
-            // ќтражаем вектор скорости
-            if (wallStart.X == wallEnd.X) // ¬ертикальна€ стена
-            {
-                return new Vector2(-velocity.X, velocity.Y);
-            }
-            else if (wallStart.Y == wallEnd.Y) // √оризонтальна€ стена
-            {
-                return new Vector2(velocity.X, -velocity.Y);
-            }
-            return velocity;
+            // ‘ормула отражени€: V' = V - 2 * (V Ј N) * N
+            return velocity - 2 * Vector2.Dot(velocity, normal) * normal;
         }
     }
 }
