@@ -65,15 +65,12 @@ namespace ECS.Systems
                         ballVelocity.Velocity = Reflect(ballVelocity.Velocity, wallNormal);
 
                         // ¬о избежание застревани€ шарика в стене, сдвигаем его немного в сторону от стены
-                        ballPosition.Position += ballVelocity.Velocity;
+                        //ballPosition.Position += ballVelocity.Velocity * 0.1f; // —двиг на 10% от скорости дл€ избегани€ застревани€
                     }
                 }
             }
         }
 
-        /// <summary>
-        /// ѕровер€ет, произойдет ли столкновение шарика со стеной на заданном отрезке.
-        /// </summary>
         private bool WillCollide(Vector2 oldPos, Vector2 velocity, float radius, Vector2 wallStart, Vector2 wallEnd, out Vector2 collisionPoint, out Vector2 wallNormal)
         {
             var newPos = oldPos + velocity;
@@ -90,41 +87,48 @@ namespace ECS.Systems
             wallNormal = new Vector2(-wallVector.Y, wallVector.X);
             wallNormal = Vector2.Normalize(wallNormal);
 
-            // ¬ектор от начала стены до центра шарика
-            var wallToBallStart = oldPos - wallStart;
-
-            // ѕроекци€ вектора от стены до шарика на нормаль стены
-            var projectionLength = Vector2.Dot(wallToBallStart, wallNormal);
-            var penetrationDistance = Math.Abs(projectionLength) - radius;
-
-            // ≈сли шарик уже пересекаетс€ со стеной
-            if (penetrationDistance <= 0)
+            // ѕроверка пересечени€ окружности (кра€ шарика) с линией стены
+            if (LineSegmentIntersectsCircle(wallStart, wallEnd, oldPos, radius, out var intersectionPoint))
             {
-                // ”станавливаем точку столкновени€ с небольшим сдвигом в сторону от стены (во избежание застревани€ в стене)
-                collisionPoint = oldPos;
+                collisionPoint = intersectionPoint;
                 return true;
-            }
-
-            // ѕровер€ем, пересечет ли шарик стену на своем пути
-            var movementProjection = Vector2.Dot(ballMovementVector, wallNormal);
-
-            // ≈сли шарик движетс€ к стене (проверка знака проекции)
-            if (movementProjection < 0)
-            {
-                // ¬ычисл€ем врем€ столкновени€
-                var tCollision = penetrationDistance / -movementProjection;
-
-                if (tCollision >= 0 && tCollision <= 1)
-                {
-                    // Ќаходим точку столкновени€
-                    collisionPoint = oldPos + tCollision * ballMovementVector;
-                    return true;
-                }
             }
 
             return false;
         }
 
+        /// <summary>
+        /// ѕровер€ет, пересекаетс€ ли отрезок (wallStart - wallEnd) с окружностью (центр - circleCenter, радиус - circleRadius).
+        /// </summary>
+        private bool LineSegmentIntersectsCircle(Vector2 wallStart, Vector2 wallEnd, Vector2 circleCenter, float circleRadius, out Vector2 intersectionPoint)
+        {
+            intersectionPoint = Vector2.Zero;
+
+            // ¬ектор стены
+            var wallVector = wallEnd - wallStart;
+            var wallLengthSquared = wallVector.LengthSquared();
+
+            // ¬ектор от начала стены до центра окружности
+            var toCenterVector = circleCenter - wallStart;
+
+            // ѕроекци€ центра окружности на направл€ющий вектор стены
+            var projection = Vector2.Dot(toCenterVector, wallVector) / wallLengthSquared;
+            projection = Math.Clamp(projection, 0, 1); // ќграничиваем проекцию на отрезке [0, 1]
+
+            // Ѕлижайша€ точка на стене к центру окружности
+            var closestPoint = wallStart + projection * wallVector;
+
+            // ѕровер€ем рассто€ние от ближайшей точки на стене до центра окружности
+            var distanceSquared = (closestPoint - circleCenter).LengthSquared();
+
+            if (distanceSquared <= circleRadius * circleRadius)
+            {
+                intersectionPoint = closestPoint;
+                return true;
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// ќтражает вектор скорости относительно заданной нормали.

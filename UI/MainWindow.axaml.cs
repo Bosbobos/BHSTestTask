@@ -51,7 +51,7 @@ namespace UI
             scene.AddObject(new Wall(2, new Vector2(100, 300), new Vector2(300, 300)));
             scene.AddObject(new Wall(3, new Vector2(300, 300), new Vector2(300, 100)));
             scene.AddObject(new Wall(4, new Vector2(300, 100), new Vector2(100, 100)));
-            scene.AddObject(new Ball(5, new Vector2(150, 150), new Vector2(10f, 9f), 15f)); // Начальная позиция и радиус
+            scene.AddObject(new Ball(5, new Vector2(150, 150), new Vector2(30f, 40f), 15f)); // Начальная позиция и радиус
 
             foreach (var sceneObject in scene.SceneObjects)
             {
