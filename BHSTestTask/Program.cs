@@ -11,19 +11,17 @@ namespace BHSTestTask
     {
         public static void Main(string[] args)
         {
-            // 1. Инициализация сцены
+            // Инициализация сцены
             Scene scene = new Scene();
 
             // Создаем 4 стены
-            scene.AddObject(new Wall(1, new Vector2(0, 0), new Vector2(0, 10)));
-            scene.AddObject(new Wall(2, new Vector2(0, 10), new Vector2(10, 10)));
-            scene.AddObject(new Wall(3, new Vector2(10, 10), new Vector2(10, 0)));
-            scene.AddObject(new Wall(4, new Vector2(10, 0), new Vector2(0, 0)));
+            scene.AddObject(new Wall(1, new Vector2(100, 100), new Vector2(50, 400)));
+            scene.AddObject(new Wall(2, new Vector2(50, 400), new Vector2(300, 500)));
+            scene.AddObject(new Wall(3, new Vector2(300, 500), new Vector2(300, 100)));
+            scene.AddObject(new Wall(4, new Vector2(300, 100), new Vector2(100, 100)));
+            scene.AddObject(new Ball(5, new Vector2(150, 150), new Vector2(6f, 5f), 15f)); // Начальная позиция и радиус
 
-            // Добавляем шарик в центр коробки
-            scene.AddObject(new Ball(5, new Vector2(5, 5), new Vector2(0.1f, 0.1f), 0.5f));
-
-            // 2. Инициализация ECS мира
+            //  Инициализация ECS мира
             var ecsWorld = new EcsWorld();
             var ecsSystems = new EcsSystems(ecsWorld);
 
@@ -57,23 +55,19 @@ namespace BHSTestTask
                 }
             }
 
-            // 3. Добавляем системы
+            // Добавляем системы
             ecsSystems.Add(new BallMovementSystem());
             ecsSystems.Add(new BallCollisionSystem());
 
-            // 4. Инициализация и выполнение
+            // Инициализация и выполнение
             ecsSystems.Init();
 
-            // 5. Основной цикл приложения
+            // Основной цикл приложения
             while (true)
             {
                 ecsSystems.Run();
                 System.Threading.Thread.Sleep(100); // Задержка для видимого перемещения
             }
-
-            // 6. Очистка ресурсов
-            ecsSystems.Destroy();
-            ecsWorld.Destroy();
         }
     }
 }
